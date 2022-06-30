@@ -42,15 +42,27 @@ class Game extends React.Component {
     const current = history[history.length - 1];
     const squares = current.squares.slice();
 
-    if (this.selectedPiece.value === null && squares[i] !== null) {
+    if (this.state.selectedPiece.value === null && squares[i] !== null && isTurn(this.state.whiteTurn, squares[i])) {
       this.setState({
         selectedPiece: {
           value: squares[i],
           location: i,
         }
       });
-    } else if (isValidMove(this.selectedPiece, i, squares)) {
-
+    } else if (isTurn(this.state.whiteTurn, this.state.selectedPiece.value) && isValidMove(this.state.selectedPiece, i, squares)) {
+      squares[i] = this.state.selectedPiece.value;
+      squares[this.state.selectedPiece.location] = null;
+      this.setState({
+        history: history.concat([{
+          squares: squares,
+        }]),
+        selectedPiece: {
+          value: null,
+          location: null,
+        },
+        turnNumber: history.length,
+        whiteTurn: !this.state.whiteTurn,
+      });
     }
   }
 
@@ -81,6 +93,7 @@ class Game extends React.Component {
 }
 
 function isValidMove(piece, destination, squares) {
+  // temporary return while testing
   if (piece.location === null || piece.location === destination || piece.value === null) {
     return false;
   }
@@ -88,40 +101,102 @@ function isValidMove(piece, destination, squares) {
     case pieceValues.wKing:
     case pieceValues.bKing:
 
-      break;
+      return true;
     case pieceValues.wQueen:
     case pieceValues.bQueen:
 
-      break;
+      return true;
     case pieceValues.wRook:
     case pieceValues.bRook:
 
-      break;
+      return true;
     case pieceValues.wBishop:
     case pieceValues.bBishop:
 
-      break;
+      return true;
     case pieceValues.wKnight:
     case pieceValues.bKnight:
-
+      // If trying to move a knight over another piece of the same color
+      if (squares[destination] !== null && isWhite(squares[destination]) === isWhite(piece.value)) {
+        return false;
+      }
+      // Valid positions a knight can move based on board index
+      if (destination === (piece.location + 6) || destination === (piece.location - 6)) {
+        return true;
+      }
+      if (destination === (piece.location + 10) || destination === (piece.location - 10)) {
+        return true;
+      }
+      if (destination === (piece.location + 15) || destination === (piece.location - 15)) {
+        return true;
+      }
+      if (destination === (piece.location + 17) || destination === (piece.location - 17)) {
+        return true;
+      }
       return false;
     case pieceValues.wPawn:
+      // If trying to move a pawn over another piece of the same color
+      if (squares[destination] !== null && isWhite(squares[destination]) === isWhite(piece.value)) {
+        return false;
+      }
+      // If trying to move a pawn forward 1 space, and no other piece is blocking it.
+      if (destination === (piece.location - amtOfRows) && squares[destination] === null) {
+        return true;
+      }
+      if (destination === (piece.location - (amtOfRows * 2)) && squares[destination] === null &&
+        piece.value === pieceValues.wPawn && piece.location >= 48 && piece.location <= 55) {
+        return true;
+      }
+      // If trying to take with a pawn, must be piece 1 space diagonal from origin.
+      if ((destination === (piece.location - amtOfRows - 1) || destination === (piece.location - amtOfRows + 1)) &&
+        (squares[destination] !== null) && !isWhite(squares[destination])) {
+        return true;
+      }
+      // Otherwise, not a valid move.
+      return false;
     case pieceValues.bPawn:
+      // If trying to move a pawn over another piece of the same color
+      if (squares[destination] !== null && isWhite(squares[destination]) === isWhite(piece.value)) {
+        return false;
+      }
       // If trying to move a pawn forward 1 space, and no other piece is blocking it.
       if (destination === (piece.location + amtOfRows) && squares[destination] === null) {
         return true;
       }
       // If first pawn move and move forward 2 spaces and no other piece is blocking it.
-      if (destination === (piece.location + (amtOfRows * 2)) && squares[destination] === null) {
+      if (destination === (piece.location + (amtOfRows * 2)) && squares[destination] === null &&
+        piece.value === pieceValues.bPawn && piece.location >= 8 && piece.location <= 15) {
         return true;
       }
       // If trying to take with a pawn, must be piece 1 space diagonal from origin.
       if ((destination === (piece.location + amtOfRows - 1) || destination === (piece.location + amtOfRows + 1)) &&
-        (squares[destination] !== null || squares[destination] !== null)) {
+        (squares[destination] !== null) && isWhite(squares[destination])) {
         return true;
       }
       // Otherwise, not a valid move.
       return false;
+  }
+}
+
+function isTurn(whiteTurn, pieceValue) {
+  if (whiteTurn && isWhite(pieceValue)) {
+    return true;
+  }
+  if (!whiteTurn && !isWhite(pieceValue)) {
+    return true;
+  }
+  return false;
+}
+
+function isWhite(pieceValue) {
+  switch (pieceValue) {
+    case pieceValues.wKing:
+    case pieceValues.wQueen:
+    case pieceValues.wRook:
+    case pieceValues.wBishop:
+    case pieceValues.wKnight:
+    case pieceValues.wPawn:
+      return true;
     default:
       return false;
   }
@@ -129,7 +204,7 @@ function isValidMove(piece, destination, squares) {
 
 function initSquares() {
   const squares = Array(totalSquares).fill(null);
-  
+
   // populating black back row (indexes 0 - 7)
   for (let i = 0; i <= 7; i++) {
     switch (i) {
@@ -159,7 +234,6 @@ function initSquares() {
     squares[i] = pieceValues.bPawn;
   }
   // populating white back row (indexes 56 - 63)
-  // populating black back row (indexes 0 - 7)
   for (let i = 56; i <= 63; i++) {
     switch (i) {
       case 56:
