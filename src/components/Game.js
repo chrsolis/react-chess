@@ -94,10 +94,10 @@ class Game extends React.Component {
         return this.isValidKingMove(destination, piece);
       case pieceValues.wQueen:
       case pieceValues.bQueen:
-        return this.isValidQueenMove(destination, piece.location);
+        return this.isValidQueenMove(destination, piece.location, squares);
       case pieceValues.wRook:
       case pieceValues.bRook:
-        return this.isValidRookMove(destination, piece.location);
+        return this.isValidRookMove(destination, piece.location, squares);
       case pieceValues.wBishop:
       case pieceValues.bBishop:
         return this.isValidBishopMove(destination, piece.location, squares);
@@ -178,11 +178,13 @@ class Game extends React.Component {
     }
     return false;
   }
-  isValidRookMove(destination, pLocation) {
+  isValidRookMove(destination, pLocation, squares) {
     let offset = 8;
+    let isValidDestination = false;
     while (pLocation + offset <= 63 || pLocation - offset >= 0) {
       if (destination === (pLocation + offset) || destination === (pLocation - offset)) {
-        return true;
+        isValidDestination = true;
+        break;
       }
       offset += 8;
     }
@@ -191,15 +193,18 @@ class Game extends React.Component {
     offset = 0;
     while (pLocation + offset <= cEnd || pLocation - offset >= cStart) {
       if (destination === (pLocation + offset) || destination === (pLocation - offset)) {
-        // TODO: fix
-        return true;
+        isValidDestination = true;
+        break;
       }
       offset++;
     }
+    if (isValidDestination && this.isRookLineClear(pLocation, destination, squares)) {
+      return true;
+    }
     return false;
   }
-  isValidQueenMove(destination, pLocation) {
-    if (this.isValidBishopMove(destination, pLocation) || this.isValidRookMove(destination, pLocation)) {
+  isValidQueenMove(destination, pLocation, squares) {
+    if (this.isValidBishopMove(destination, pLocation, squares) || this.isValidRookMove(destination, pLocation, squares)) {
       return true;
     }
     return false;
@@ -244,19 +249,9 @@ class Game extends React.Component {
     let difference = origin - destination;
     let offset;
     if (difference > 0) {
-      if (difference % 7 === 0) {
-        // to the right and above the origin
-        offset = -7;
-      } else {
-        offset = -9;
-      }
+      offset = (difference % 7 === 0) ? -7 : -9;
     } else {
-      if (difference % 7 === 0) {
-        // to the left and below the origin
-        offset = 7;
-      } else {
-        offset = 9;
-      }
+      offset = (difference % 7 === 0) ? 7 : 9;
     }
     let i = offset;
     while (origin + i !== destination) {
@@ -268,7 +263,21 @@ class Game extends React.Component {
     return true;
   }
   isRookLineClear(origin, destination, squares) {
-
+    let difference = origin - destination;
+    let offset;
+    if (difference > 0) {
+      offset = (difference % 8 === 0) ? -8 : -1;
+    } else {
+      offset = (difference % 8 === 0) ? 8 : 1;
+    }
+    let i = offset;
+    while (origin + i !== destination) {
+      if (squares[origin + i] !== null) {
+        return false;
+      }
+      i += offset;
+    }
+    return true;
   }
 
   castle(destination, squares) {
