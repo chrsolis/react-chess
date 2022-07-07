@@ -100,7 +100,7 @@ class Game extends React.Component {
         return this.isValidRookMove(destination, piece.location);
       case pieceValues.wBishop:
       case pieceValues.bBishop:
-        return this.isValidBishopMove(destination, piece.location);
+        return this.isValidBishopMove(destination, piece.location, squares);
       case pieceValues.wKnight:
       case pieceValues.bKnight:
         return this.isValidKnightMove(destination, piece.location);
@@ -156,19 +156,25 @@ class Game extends React.Component {
     }
     return false;
   }
-  isValidBishopMove(destination, pLocation) {
+  isValidBishopMove(destination, pLocation, squares) {
     let offset = 7;
     let i = 1;
+    let isValidDestination = false;
     while (offset <= 56) {
       const lOffset = 9 * i;
       const rOffset = 7 * i;
       if (destination === (pLocation + rOffset) || destination === (pLocation - rOffset)) {
-        return true;
+        isValidDestination = true;
+        break;
       }
       if (destination === (pLocation + lOffset) || destination === (pLocation - lOffset)) {
-        return true;
+        isValidDestination = true;
+        break;
       }
       offset = rOffset + ++i;
+    }
+    if (isValidDestination && this.isBishopDiagonalClear(pLocation, destination, squares)) {
+      return true;
     }
     return false;
   }
@@ -231,6 +237,38 @@ class Game extends React.Component {
     }
 
     return false;
+  }
+
+  isBishopDiagonalClear(origin, destination, squares) {
+    // figure out whether it is to the left of the origin, or to the right.
+    let difference = origin - destination;
+    let offset;
+    if (difference > 0) {
+      if (difference % 7 === 0) {
+        // to the right and above the origin
+        offset = -7;
+      } else {
+        offset = -9;
+      }
+    } else {
+      if (difference % 7 === 0) {
+        // to the left and below the origin
+        offset = 7;
+      } else {
+        offset = 9;
+      }
+    }
+    let i = offset;
+    while (origin + i !== destination) {
+      if (squares[origin + i] !== null) {
+        return false;
+      }
+      i += offset;
+    }
+    return true;
+  }
+  isRookLineClear(origin, destination, squares) {
+
   }
 
   castle(destination, squares) {
