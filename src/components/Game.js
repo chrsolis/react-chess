@@ -31,6 +31,14 @@ class Game extends React.Component {
     this.state = {
       history: [{
         squares: initSquares(),
+        pieceMoved: {
+          value: null,
+          location: null,
+        },
+        pieceTaken: {
+          value: null,
+          location: null,
+        },
       }],
       selectedPiece: {
         value: null,
@@ -45,6 +53,8 @@ class Game extends React.Component {
     const history = this.state.history.slice(0, this.state.turnNumber + 1);
     const current = history[history.length - 1];
     const squares = current.squares.slice();
+
+    const origDestinationPiece = squares[i];
 
     if (this.state.selectedPiece.value === null && squares[i] !== null && isTurn(this.state.whiteTurn, squares[i])) {
       this.setState({
@@ -70,6 +80,14 @@ class Game extends React.Component {
       this.setState({
         history: history.concat([{
           squares: squares,
+          pieceMoved: {
+            value: this.state.selectedPiece.value,
+            location: this.state.selectedPiece.location,
+          },
+          pieceTaken: {
+            value: origDestinationPiece,
+            location: i,
+          },
         }]),
         selectedPiece: {
           value: null,
@@ -307,11 +325,25 @@ class Game extends React.Component {
     return squares;
   }
 
-  // etc...
-
   render() {
     const history = this.state.history.slice(0, this.state.turnNumber + 1);
     const current = history[history.length - 1];
+
+    
+
+    const moves = history.map((step, move) => {
+      const pieceDesc = getPieceDescription(step.pieceMoved, step.pieceTaken);
+      const desc = move ?
+        pieceDesc :
+        null;
+      if (desc !== null) {
+        return (
+          <li key={move}>
+            {desc}
+          </li>
+        );
+      }
+    });
 
     return (
       <div className="game">
@@ -326,7 +358,7 @@ class Game extends React.Component {
           />
         </div>
         <div className="game-info">
-
+            <ol>{moves}</ol>
         </div>
       </div>
     );
@@ -440,6 +472,69 @@ function updateKingMoveStatus() {
     hasWKingMoved = true;
   } else if (!hasBKingMoved) {
     hasBKingMoved = true;
+  }
+}
+
+function getPieceDescription(pieceMoved, pieceTaken) {
+  let returnString = getPieceAbbreviation(pieceMoved.value);
+  if (pieceTaken.value !== null) {
+    returnString += 'x';
+  }
+  returnString += getLocationReference(pieceTaken.location);
+  return returnString;
+}
+function getLocationReference(location) {
+  const numValue = Math.abs((Math.floor(location/8)) - 8);
+  const letterVal = (location%8);
+  let ref;
+  switch (letterVal) {
+    case 0:
+      ref = 'a';
+      break;
+    case 1:
+      ref = 'b';
+      break;
+    case 2:
+      ref = 'c';
+      break;
+    case 3:
+      ref = 'd';
+      break;
+    case 4:
+      ref = 'e';
+      break;
+    case 5:
+      ref = 'f';
+      break;
+    case 6:
+      ref = 'g';
+      break;
+    case 7:
+      ref = 'h';
+      break;
+  }
+  ref += numValue;
+  return ref;
+}
+function getPieceAbbreviation(pieceValue) {
+  switch (pieceValue) {
+    case pieceValues.wKing:
+    case pieceValues.bKing:
+      return 'K';
+    case pieceValues.wQueen:
+    case pieceValues.bQueen:
+      return 'Q';
+    case pieceValues.wRook:
+    case pieceValues.bRook:
+      return 'R';
+    case pieceValues.wBishop:
+    case pieceValues.bBishop:
+      return 'B';
+    case pieceValues.wKnight:
+    case pieceValues.bKnight:
+      return 'N';
+    default:
+      return '';
   }
 }
 
