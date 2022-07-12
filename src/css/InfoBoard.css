@@ -1,0 +1,29 @@
+.info {
+    border-bottom: 1px solid #999;
+    float: left;
+    font-size: 12pt;
+    font-weight: bold;
+    line-height: 34px;
+    height: 34px;
+    margin-right: -0.5px;
+    margin-bottom: -2px;
+    padding: 0;
+    text-align: left;
+    width: 90px;
+}
+
+.info-board-row:after {
+    clear: both;
+    content: "";
+    display: table;
+}
+
+.info-num {
+    margin-right: 15px;
+    padding-right: 4px;
+    border-right: 1px solid #999;
+}
+
+.info-second {
+    padding-left: 15px;
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import Board from './Board';
 import '../css/game.css';
+import InfoBoard from './InfoBoard';
 
 const amtOfRows = 8;
 const amtOfCols = 8;
@@ -123,41 +124,40 @@ class Game extends React.Component {
       case pieceValues.bKnight:
         return this.isValidKnightMove(destination, piece.location);
       case pieceValues.wPawn:
-        // If trying to move a pawn forward 1 space, and no other piece is blocking it.
-        if (destination === (piece.location - amtOfRows) && squares[destination] === null) {
-          return true;
-        }
-        if (destination === (piece.location - (amtOfRows * 2)) && squares[destination] === null &&
-          piece.value === pieceValues.wPawn && piece.location >= 48 && piece.location <= 55) {
-          return true;
-        }
-        // If trying to take with a pawn, must be piece 1 space diagonal from origin.
-        if ((destination === (piece.location - amtOfRows - 1) || destination === (piece.location - amtOfRows + 1)) &&
-          (squares[destination] !== null) && !isWhite(squares[destination])) {
-          return true;
-        }
-        // Otherwise, not a valid move.
-        return false;
       case pieceValues.bPawn:
-        // If trying to move a pawn forward 1 space, and no other piece is blocking it.
-        if (destination === (piece.location + amtOfRows) && squares[destination] === null) {
-          return true;
-        }
-        // If first pawn move and move forward 2 spaces and no other piece is blocking it.
-        if (destination === (piece.location + (amtOfRows * 2)) && squares[destination] === null &&
-          piece.value === pieceValues.bPawn && piece.location >= 8 && piece.location <= 15) {
-          return true;
-        }
-        // If trying to take with a pawn, must be piece 1 space diagonal from origin.
-        if ((destination === (piece.location + amtOfRows - 1) || destination === (piece.location + amtOfRows + 1)) &&
-          (squares[destination] !== null) && isWhite(squares[destination])) {
-          return true;
-        }
-        // Otherwise, not a valid move.
-        return false;
+        return this.isValidPawnMove(destination, piece, squares);
     }
   }
   // utility functions for valid move checks
+  isValidPawnMove(destination, piece, squares) {
+    let colorOffset = 1;
+    if (isWhite(piece.value)) {
+      colorOffset = -1;
+    }
+    // If trying to move a pawn forward 1 space, and no other piece is blocking it
+    if (destination === (piece.location + (amtOfRows * colorOffset)) && squares[destination] === null) {
+      return true;
+    }
+    // If first pawn move and move forward 2 spaces and no other piece is blocking it.
+    if (colorOffset === 1) {
+      if (destination === (piece.location + (amtOfRows * 2 * colorOffset)) && squares[destination] === null &&
+        piece.value === pieceValues.bPawn && piece.location >= 8 && piece.location <= 15) {
+        return true;
+      }
+    } else {
+      if (destination === (piece.location + (amtOfRows * 2 * colorOffset)) && squares[destination] === null &&
+        piece.value === pieceValues.wPawn && piece.location >= 48 && piece.location <= 55) {
+        return true;
+      }
+    }
+    // If trying to take with a pawn, must be piece 1 space diagonal from origin.
+    if ((destination === (piece.location + (amtOfRows * colorOffset) - 1) || destination === (piece.location + (amtOfRows * colorOffset) + 1)) &&
+      (squares[destination] !== null) && isOpposingColor(piece.value, squares[destination])) {
+      return true;
+    }
+    // Otherwise not a valid move
+    return false;
+  }
   isValidKnightMove(destination, pLocation) {
     // Valid positions a knight can move based on board index
     if (destination === (pLocation + 6) || destination === (pLocation - 6)) {
@@ -329,21 +329,19 @@ class Game extends React.Component {
     const history = this.state.history.slice(0, this.state.turnNumber + 1);
     const current = history[history.length - 1];
 
-    
-
-    const moves = history.map((step, move) => {
-      const pieceDesc = getPieceDescription(step.pieceMoved, step.pieceTaken);
-      const desc = move ?
-        pieceDesc :
-        null;
-      if (desc !== null) {
-        return (
-          <li key={move}>
-            {desc}
-          </li>
-        );
-      }
-    });
+    // const moves = history.map((step, move) => {
+    //   const pieceDesc = getPieceDescription(step.pieceMoved, step.pieceTaken);
+    //   const desc = move ?
+    //     pieceDesc :
+    //     null;
+    //   if (desc !== null) {
+    //     return (
+    //       <li key={move}>
+    //         {desc}
+    //       </li>
+    //     );
+    //   }
+    // });
 
     return (
       <div className="game">
@@ -358,7 +356,9 @@ class Game extends React.Component {
           />
         </div>
         <div className="game-info">
-            <ol>{moves}</ol>
+          <InfoBoard
+            history={this.state.history.slice(1, this.state.turnNumber + 1)}
+          />
         </div>
       </div>
     );
@@ -387,6 +387,12 @@ function isWhite(pieceValue) {
     default:
       return false;
   }
+}
+function isOpposingColor(originalPiece, destinationPiece) {
+  if ((isWhite(originalPiece) && isWhite(destinationPiece)) || (!isWhite(originalPiece) && !isWhite(destinationPiece))) {
+    return false;
+  }
+  return true;
 }
 
 function initSquares() {
@@ -484,8 +490,8 @@ function getPieceDescription(pieceMoved, pieceTaken) {
   return returnString;
 }
 function getLocationReference(location) {
-  const numValue = Math.abs((Math.floor(location/8)) - 8);
-  const letterVal = (location%8);
+  const numValue = Math.abs((Math.floor(location / 8)) - 8);
+  const letterVal = (location % 8);
   let ref;
   switch (letterVal) {
     case 0:
